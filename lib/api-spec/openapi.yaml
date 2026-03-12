@@ -1,15 +1,22 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NIMIZA Learning Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: characters
+    description: Character operations
+  - name: stories
+    description: Story operations
+  - name: lessons
+    description: Lesson operations
+  - name: progress
+    description: Progress operations
 paths:
   /healthz:
     get:
@@ -24,6 +31,165 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /characters:
+    get:
+      operationId: listCharacters
+      tags: [characters]
+      summary: List all characters
+      responses:
+        "200":
+          description: List of characters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Character"
+    post:
+      operationId: createCharacter
+      tags: [characters]
+      summary: Create a character
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCharacter"
+      responses:
+        "201":
+          description: Created character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+
+  /characters/{id}:
+    get:
+      operationId: getCharacter
+      tags: [characters]
+      summary: Get a character by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+        "404":
+          description: Not found
+
+  /stories:
+    get:
+      operationId: listStories
+      tags: [stories]
+      summary: List all stories
+      parameters:
+        - name: characterId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: skill
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: ageGroup
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Story"
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Create a story
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStory"
+      responses:
+        "201":
+          description: Created story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+
+  /stories/{id}:
+    get:
+      operationId: getStory
+      tags: [stories]
+      summary: Get a story with scenes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Story with scenes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryWithScenes"
+        "404":
+          description: Not found
+
+  /progress:
+    get:
+      operationId: listProgress
+      tags: [progress]
+      summary: Get progress for a user
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Progress list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProgress"
+    post:
+      operationId: saveProgress
+      tags: [progress]
+      summary: Save story completion progress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveProgress"
+      responses:
+        "201":
+          description: Saved progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +200,316 @@ components:
       required:
         - status
 
+    Character:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        emoji:
+          type: string
+        color:
+          type: string
+        traits:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        teaches:
+          type: string
+      required:
+        - id
+        - name
+        - role
+        - emoji
+        - color
+        - traits
+        - description
+        - teaches
+
+    CreateCharacter:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        emoji:
+          type: string
+        color:
+          type: string
+        traits:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        teaches:
+          type: string
+      required:
+        - name
+        - role
+        - emoji
+        - color
+        - traits
+        - description
+        - teaches
+
+    Story:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        emoji:
+          type: string
+        description:
+          type: string
+        characterId:
+          type: string
+        characterName:
+          type: string
+        characterEmoji:
+          type: string
+        skill:
+          type: string
+        ageGroup:
+          type: string
+        duration:
+          type: integer
+        badgeEmoji:
+          type: string
+        badgeName:
+          type: string
+      required:
+        - id
+        - title
+        - emoji
+        - description
+        - characterId
+        - characterName
+        - characterEmoji
+        - skill
+        - ageGroup
+        - duration
+        - badgeEmoji
+        - badgeName
+
+    CreateStory:
+      type: object
+      properties:
+        title:
+          type: string
+        emoji:
+          type: string
+        description:
+          type: string
+        characterId:
+          type: string
+        skill:
+          type: string
+        ageGroup:
+          type: string
+        duration:
+          type: integer
+        badgeEmoji:
+          type: string
+        badgeName:
+          type: string
+      required:
+        - title
+        - emoji
+        - description
+        - characterId
+        - skill
+        - ageGroup
+        - duration
+        - badgeEmoji
+        - badgeName
+
+    Scene:
+      type: object
+      properties:
+        id:
+          type: string
+        storyId:
+          type: string
+        order:
+          type: integer
+        emoji:
+          type: string
+        title:
+          type: string
+        text:
+          type: string
+        character:
+          type: string
+      required:
+        - id
+        - storyId
+        - order
+        - emoji
+        - title
+        - text
+        - character
+
+    QuizQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        storyId:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctIndex:
+          type: integer
+      required:
+        - id
+        - storyId
+        - question
+        - options
+        - correctIndex
+
+    StoryWithScenes:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        emoji:
+          type: string
+        description:
+          type: string
+        characterId:
+          type: string
+        characterName:
+          type: string
+        characterEmoji:
+          type: string
+        skill:
+          type: string
+        ageGroup:
+          type: string
+        duration:
+          type: integer
+        badgeEmoji:
+          type: string
+        badgeName:
+          type: string
+        scenes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Scene"
+        quiz:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestion"
+      required:
+        - id
+        - title
+        - emoji
+        - description
+        - characterId
+        - characterName
+        - characterEmoji
+        - skill
+        - ageGroup
+        - duration
+        - badgeEmoji
+        - badgeName
+        - scenes
+        - quiz
+
+    ProgressEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        storyId:
+          type: string
+        storyTitle:
+          type: string
+        badgeEmoji:
+          type: string
+        badgeName:
+          type: string
+        quizScore:
+          type: integer
+        completedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - storyId
+        - storyTitle
+        - badgeEmoji
+        - badgeName
+        - quizScore
+        - completedAt
+
+    SaveProgress:
+      type: object
+      properties:
+        userId:
+          type: string
+        storyId:
+          type: string
+        quizScore:
+          type: integer
+      required:
+        - userId
+        - storyId
+        - quizScore
+
+    UserProgress:
+      type: object
+      properties:
+        userId:
+          type: string
+        xp:
+          type: integer
+        level:
+          type: integer
+        streak:
+          type: integer
+        badges:
+          type: array
+          items:
+            type: object
+            properties:
+              emoji:
+                type: string
+              name:
+                type: string
+            required:
+              - emoji
+              - name
+        completedStories:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgressEntry"
+        recentlyLearned:
+          type: array
+          items:
+            type: string
+      required:
+        - userId
+        - xp
+        - level
+        - streak
+        - badges
+        - completedStories
+        - recentlyLearned
