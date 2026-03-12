@@ -1,140 +1,173 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
+  Animated,
+  Easing,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useListProgress } from "@workspace/api-client-react";
-import NIMIZA_COLORS from "@/constants/nimiza-colors";
+import NIMIZA from "@/constants/nimiza-colors";
 
-function XPBar({ xp, level }: { xp: number; level: number }) {
-  const xpForNextLevel = level * 200;
-  const xpThisLevel = xp - ((level - 1) * 200);
-  const progress = Math.min(xpThisLevel / 200, 1);
+const LEVEL_LABELS = ["Seedling", "Explorer", "Adventurer", "Hero", "Champion", "Legend"];
+const LEVEL_COLORS: [string, string][] = [
+  [NIMIZA.green, "#22C55E"],
+  [NIMIZA.blue, NIMIZA.blueDark],
+  [NIMIZA.yellow, NIMIZA.yellowDark],
+  [NIMIZA.purple, NIMIZA.purpleDark],
+  [NIMIZA.coral, "#E11D48"],
+  ["#F59E0B", "#D97706"],
+];
 
+function AnimatedXPBar({ progress }: { progress: number }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, { toValue: progress, duration: 1200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [progress]);
+  const width = anim.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] });
   return (
-    <View style={styles.xpBox}>
-      <View style={styles.xpRow}>
-        <View>
-          <Text style={styles.xpLevelLabel}>Level {level}</Text>
-          <Text style={styles.xpSub}>Explorer</Text>
-        </View>
-        <View style={styles.xpBadge}>
-          <Ionicons name="flash" size={14} color={NIMIZA_COLORS.purple} />
-          <Text style={styles.xpBadgeText}>{xp} XP</Text>
-        </View>
-      </View>
-      <View style={styles.xpBarBg}>
-        <View style={[styles.xpBarFill, { width: `${progress * 100}%` as any }]} />
-      </View>
-      <Text style={styles.xpNext}>{xpForNextLevel - xp} XP to Level {level + 1}</Text>
+    <View style={styles.xpBarBg}>
+      <Animated.View style={[styles.xpBarFill, { width: width as any }]}>
+        <LinearGradient colors={[NIMIZA.yellow, NIMIZA.coral]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
     </View>
   );
 }
 
-interface StatCardProps {
-  iconName: "medal" | "book" | "flame";
-  value: string | number;
-  label: string;
-  color: string;
-}
-
-function StatCard({ iconName, value, label, color }: StatCardProps) {
+function StatCard({ icon, value, label, grad }: { icon: keyof typeof Ionicons.glyphMap; value: string | number; label: string; grad: [string, string] }) {
+  const scale = useRef(new Animated.Value(0.8)).current;
+  useEffect(() => {
+    Animated.spring(scale, { toValue: 1, friction: 5, useNativeDriver: true }).start();
+  }, []);
   return (
-    <View style={styles.statCard}>
-      <View style={[styles.statIconCircle, { backgroundColor: color + "22" }]}>
-        <Ionicons name={iconName} size={22} color={color} />
-      </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    <Animated.View style={[styles.statCard, { transform: [{ scale }] }]}>
+      <LinearGradient colors={grad} style={styles.statGrad}>
+        <Ionicons name={icon} size={22} color="#FFF" />
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-
   const { data: progress, isLoading } = useListProgress({ userId: "guest" });
+
+  const level = progress?.level ?? 1;
+  const xp = progress?.xp ?? 0;
+  const xpThisLevel = xp - (level - 1) * 200;
+  const xpProgress = Math.min(xpThisLevel / 200, 1);
+  const levelLabel = LEVEL_LABELS[Math.min(level - 1, LEVEL_LABELS.length - 1)];
+  const levelGrad = LEVEL_COLORS[Math.min(level - 1, LEVEL_COLORS.length - 1)];
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+      style={styles.root}
+      contentContainerStyle={{ paddingBottom: 110 + insets.bottom }}
       showsVerticalScrollIndicator={false}
     >
+      {/* Hero header */}
       <LinearGradient
-        colors={[NIMIZA_COLORS.purple, "#7C3AED"]}
-        style={[styles.header, { paddingTop: topPad + 12 }]}
+        colors={[...NIMIZA.zaraGrad, "#6D28D9"]}
+        style={[styles.header, { paddingTop: topPad + 16 }]}
       >
-        <View style={styles.avatarCircle}>
-          <Ionicons name="person" size={36} color="rgba(255,255,255,0.9)" />
+        <View style={styles.avatarWrap}>
+          <Ionicons name="person" size={44} color="rgba(255,255,255,0.9)" />
+          <View style={[styles.levelBadge, { backgroundColor: NIMIZA.yellow }]}>
+            <Text style={styles.levelBadgeText}>Lv {level}</Text>
+          </View>
         </View>
-        <Text style={styles.headerTitle}>My Progress</Text>
-        <Text style={styles.headerSub}>Keep learning every day!</Text>
+        <Text style={styles.heroTitle}>My Progress</Text>
+        <Text style={styles.heroSub}>{levelLabel} • {xp} XP total</Text>
       </LinearGradient>
 
       {isLoading ? (
         <View style={styles.loadingBox}>
-          <Ionicons name="hourglass-outline" size={32} color={NIMIZA_COLORS.textMuted} />
-          <Text style={styles.loadingText}>Loading progress...</Text>
+          <Ionicons name="hourglass-outline" size={40} color={NIMIZA.purple} />
+          <Text style={styles.loadingText}>Loading your progress...</Text>
         </View>
       ) : (
         <>
-          {progress && (
-            <View style={styles.section}>
-              <XPBar xp={progress.xp} level={progress.level} />
+          {/* XP CARD */}
+          <View style={styles.section}>
+            <View style={styles.xpCard}>
+              <View style={styles.xpTop}>
+                <View>
+                  <Text style={styles.xpLevelName}>{levelLabel}</Text>
+                  <Text style={styles.xpNextInfo}>
+                    {200 - xpThisLevel} XP to next level
+                  </Text>
+                </View>
+                <LinearGradient colors={levelGrad} style={styles.xpChip}>
+                  <Ionicons name="flash" size={12} color="#FFF" />
+                  <Text style={styles.xpChipText}>{xp} XP</Text>
+                </LinearGradient>
+              </View>
+              <AnimatedXPBar progress={xpProgress} />
+              <View style={styles.xpLabels}>
+                <Text style={styles.xpLabelText}>Level {level}</Text>
+                <Text style={styles.xpLabelText}>Level {level + 1}</Text>
+              </View>
             </View>
-          )}
-
-          <View style={styles.statsRow}>
-            <StatCard iconName="medal" value={progress?.badges?.length ?? 0} label="Badges" color={NIMIZA_COLORS.accent} />
-            <StatCard iconName="book" value={progress?.completedStories?.length ?? 0} label="Stories" color={NIMIZA_COLORS.secondary} />
-            <StatCard iconName="flame" value={progress?.streak ?? 0} label="Streak" color={NIMIZA_COLORS.primary} />
           </View>
 
+          {/* STATS */}
+          <View style={styles.statsRow}>
+            <StatCard icon="medal" value={progress?.badges?.length ?? 0} label="Badges" grad={[NIMIZA.yellow, NIMIZA.yellowDark]} />
+            <StatCard icon="book" value={progress?.completedStories?.length ?? 0} label="Stories" grad={NIMIZA.mikoGrad} />
+            <StatCard icon="flame" value={progress?.streak ?? 0} label="Streak" grad={[NIMIZA.coral, "#DC2626"]} />
+          </View>
+
+          {/* BADGES */}
           {(progress?.badges?.length ?? 0) > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>My Badges</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesRow}>
+              <Text style={styles.sectionTitle}>Badges Earned</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesScroll}>
                 {progress!.badges.map((badge, i) => (
                   <View key={i} style={styles.badgeCard}>
-                    <View style={styles.badgeIconCircle}>
-                      <Ionicons name="ribbon" size={28} color={NIMIZA_COLORS.accent} />
-                    </View>
-                    <Text style={styles.badgeName}>{badge.name}</Text>
+                    <LinearGradient colors={[NIMIZA.yellowSoft, NIMIZA.yellow + "44"]} style={styles.badgeIconWrap}>
+                      <Ionicons name="ribbon" size={30} color={NIMIZA.yellowDark} />
+                    </LinearGradient>
+                    <Text style={styles.badgeName} numberOfLines={2}>{badge.name}</Text>
                   </View>
                 ))}
               </ScrollView>
             </View>
           )}
 
+          {/* RECENTLY LEARNED */}
           {(progress?.recentlyLearned?.length ?? 0) > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Recently Learned</Text>
-              {progress!.recentlyLearned.slice().reverse().map((title, i) => (
-                <View key={i} style={styles.learnedRow}>
-                  <View style={styles.learnedCheck}>
-                    <Ionicons name="checkmark" size={14} color="#FFF" />
+              <View style={styles.recentList}>
+                {[...progress!.recentlyLearned].reverse().map((title, i) => (
+                  <View key={i} style={styles.recentRow}>
+                    <LinearGradient colors={NIMIZA.ninoGrad} style={styles.recentCheck}>
+                      <Ionicons name="checkmark" size={12} color="#FFF" />
+                    </LinearGradient>
+                    <Text style={styles.recentTitle}>{title}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={NIMIZA.textMuted} />
                   </View>
-                  <Text style={styles.learnedTitle}>{title}</Text>
-                </View>
-              ))}
+                ))}
+              </View>
             </View>
           )}
 
+          {/* EMPTY STATE */}
           {(progress?.completedStories?.length ?? 0) === 0 && (
-            <View style={styles.emptyBox}>
-              <View style={styles.emptyIconCircle}>
-                <Ionicons name="leaf" size={36} color={NIMIZA_COLORS.green} />
-              </View>
-              <Text style={styles.emptyTitle}>Start Your Journey!</Text>
-              <Text style={styles.emptyText}>Complete your first adventure to earn XP and badges</Text>
+            <View style={styles.emptySection}>
+              <LinearGradient colors={[NIMIZA.purpleSoft, NIMIZA.yellowSoft]} style={styles.emptyCard}>
+                <Text style={styles.emptyEmoji}>🌱</Text>
+                <Text style={styles.emptyTitle}>Your Adventure Starts Here!</Text>
+                <Text style={styles.emptySub}>Complete your first story to start earning XP, badges, and streaks</Text>
+              </LinearGradient>
             </View>
           )}
         </>
@@ -144,224 +177,126 @@ export default function ProgressScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: NIMIZA_COLORS.background,
-  },
-  header: {
+  root: { flex: 1, backgroundColor: NIMIZA.bg },
+
+  header: { alignItems: "center", paddingHorizontal: 24, paddingBottom: 32 },
+  avatarWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingBottom: 28,
+    justifyContent: "center",
+    marginBottom: 14,
+    position: "relative",
   },
-  avatarCircle: {
+  levelBadge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    borderRadius: 50,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderWidth: 2,
+    borderColor: NIMIZA.white,
+  },
+  levelBadgeText: { fontFamily: "Nunito_900Black", fontSize: 11, color: NIMIZA.text },
+  heroTitle: { fontFamily: "FredokaOne_400Regular", fontSize: 28, color: "#FFF", marginBottom: 6 },
+  heroSub: { fontFamily: "Nunito_700Bold", fontSize: 14, color: "rgba(255,255,255,0.8)" },
+
+  loadingBox: { height: 220, alignItems: "center", justifyContent: "center", gap: 14 },
+  loadingText: { fontFamily: "Nunito_700Bold", fontSize: 16, color: NIMIZA.textLight },
+
+  section: { paddingHorizontal: 20, paddingTop: 20 },
+  sectionTitle: { fontFamily: "FredokaOne_400Regular", fontSize: 22, color: NIMIZA.text, marginBottom: 14 },
+
+  /* XP CARD */
+  xpCard: {
+    backgroundColor: NIMIZA.white,
+    borderRadius: 28,
+    padding: 22,
+    shadowColor: NIMIZA.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  xpTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
+  xpLevelName: { fontFamily: "FredokaOne_400Regular", fontSize: 22, color: NIMIZA.text },
+  xpNextInfo: { fontFamily: "Nunito_600SemiBold", fontSize: 12, color: NIMIZA.textLight, marginTop: 2 },
+  xpChip: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 50, paddingVertical: 6, paddingHorizontal: 14 },
+  xpChipText: { fontFamily: "Nunito_900Black", fontSize: 14, color: "#FFF" },
+  xpBarBg: { height: 12, backgroundColor: "#F0EBF8", borderRadius: 8, overflow: "hidden", marginBottom: 8 },
+  xpBarFill: { height: "100%", borderRadius: 8 },
+  xpLabels: { flexDirection: "row", justifyContent: "space-between" },
+  xpLabelText: { fontFamily: "Nunito_600SemiBold", fontSize: 11, color: NIMIZA.textMuted },
+
+  /* STATS */
+  statsRow: { flexDirection: "row", paddingHorizontal: 20, paddingTop: 16, gap: 12 },
+  statCard: { flex: 1, borderRadius: 24, overflow: "hidden" },
+  statGrad: { padding: 16, alignItems: "center", gap: 5 },
+  statValue: { fontFamily: "FredokaOne_400Regular", fontSize: 28, color: "#FFF" },
+  statLabel: { fontFamily: "Nunito_700Bold", fontSize: 11, color: "rgba(255,255,255,0.85)" },
+
+  /* BADGES */
+  badgesScroll: { gap: 12, paddingBottom: 4 },
+  badgeCard: {
+    alignItems: "center",
+    gap: 8,
+    width: 88,
+  },
+  badgeIconWrap: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontFamily: "Inter_700Bold",
-    color: "#FFFFFF",
-    marginBottom: 4,
-  },
-  headerSub: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.8)",
-  },
-  loadingBox: {
-    height: 200,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: NIMIZA_COLORS.textSecondary,
-    fontFamily: "Inter_400Regular",
-  },
-  section: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    color: NIMIZA_COLORS.text,
-    marginBottom: 14,
-  },
-  xpBox: {
-    backgroundColor: NIMIZA_COLORS.surface,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowColor: NIMIZA.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
     shadowRadius: 8,
-    elevation: 2,
-  },
-  xpRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  xpLevelLabel: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-    color: NIMIZA_COLORS.text,
-  },
-  xpSub: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: NIMIZA_COLORS.textSecondary,
-  },
-  xpBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: NIMIZA_COLORS.purple + "22",
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-  },
-  xpBadgeText: {
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-    color: NIMIZA_COLORS.purple,
-  },
-  xpBarBg: {
-    height: 10,
-    backgroundColor: NIMIZA_COLORS.surfaceAlt,
-    borderRadius: 6,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  xpBarFill: {
-    height: "100%",
-    backgroundColor: NIMIZA_COLORS.purple,
-    borderRadius: 6,
-  },
-  xpNext: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: NIMIZA_COLORS.textMuted,
-  },
-  statsRow: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: NIMIZA_COLORS.surface,
-    borderRadius: 16,
-    padding: 14,
-    alignItems: "center",
-    gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  statIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statValue: {
-    fontSize: 22,
-    fontFamily: "Inter_700Bold",
-    color: NIMIZA_COLORS.text,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: NIMIZA_COLORS.textSecondary,
-  },
-  badgesRow: {
-    gap: 12,
-    paddingBottom: 4,
-  },
-  badgeCard: {
-    alignItems: "center",
-    backgroundColor: NIMIZA_COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    minWidth: 80,
-    gap: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  badgeIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: NIMIZA_COLORS.accent + "33",
-    alignItems: "center",
-    justifyContent: "center",
+    elevation: 3,
   },
   badgeName: {
+    fontFamily: "Nunito_700Bold",
     fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    color: NIMIZA_COLORS.textSecondary,
+    color: NIMIZA.textLight,
     textAlign: "center",
+    lineHeight: 15,
   },
-  learnedRow: {
+
+  /* RECENT */
+  recentList: {
+    backgroundColor: NIMIZA.white,
+    borderRadius: 24,
+    overflow: "hidden",
+    shadowColor: NIMIZA.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  recentRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 12,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: NIMIZA_COLORS.tabBarBorder,
+    borderBottomColor: "#F3F0FA",
   },
-  learnedCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: NIMIZA_COLORS.green,
+  recentCheck: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
-  learnedTitle: {
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    color: NIMIZA_COLORS.text,
-    flex: 1,
-  },
-  emptyBox: {
-    alignItems: "center",
-    padding: 40,
-    gap: 12,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: NIMIZA_COLORS.green + "22",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-    color: NIMIZA_COLORS.text,
-  },
-  emptyText: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: NIMIZA_COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
-  },
+  recentTitle: { flex: 1, fontFamily: "Nunito_700Bold", fontSize: 14, color: NIMIZA.text },
+
+  /* EMPTY */
+  emptySection: { padding: 20 },
+  emptyCard: { borderRadius: 32, padding: 36, alignItems: "center", gap: 10 },
+  emptyEmoji: { fontSize: 52 },
+  emptyTitle: { fontFamily: "FredokaOne_400Regular", fontSize: 22, color: NIMIZA.text },
+  emptySub: { fontFamily: "Nunito_600SemiBold", fontSize: 14, color: NIMIZA.textLight, textAlign: "center", lineHeight: 21 },
 });

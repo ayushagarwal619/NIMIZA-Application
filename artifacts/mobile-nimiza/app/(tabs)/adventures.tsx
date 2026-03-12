@@ -1,154 +1,161 @@
 import React, { useState } from "react";
 import {
   FlatList,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
-  Platform,
+  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useListStories } from "@workspace/api-client-react";
-import NIMIZA_COLORS from "@/constants/nimiza-colors";
+import NIMIZA from "@/constants/nimiza-colors";
 
-const SKILLS = ["All", "Empathy", "Courage", "Hygiene", "Sharing", "Safety", "Nature"];
-
-const SKILL_COLORS: Record<string, string> = {
-  Empathy: NIMIZA_COLORS.miko,
-  Courage: "#F59E0B",
-  Hygiene: NIMIZA_COLORS.green,
-  Sharing: NIMIZA_COLORS.secondary,
-  Safety: NIMIZA_COLORS.blue,
-  Nature: "#22C55E",
+const SKILL_META: Record<string, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  Empathy:    { color: NIMIZA.coral,      bg: "#FFECEC", icon: "heart-outline" },
+  Courage:    { color: NIMIZA.yellowDark, bg: NIMIZA.yellowSoft, icon: "shield-checkmark-outline" },
+  Sharing:    { color: NIMIZA.blueDark,   bg: NIMIZA.blueSoft,   icon: "people-outline" },
+  Hygiene:    { color: NIMIZA.green,      bg: "#DEFFF2", icon: "water-outline" },
+  Safety:     { color: NIMIZA.blue,       bg: NIMIZA.blueSoft,   icon: "warning-outline" },
+  Nature:     { color: "#22C55E",         bg: "#DCFCE7", icon: "leaf-outline" },
+  default:    { color: NIMIZA.purpleDark, bg: NIMIZA.purpleSoft, icon: "book-outline" },
 };
 
-const SKILL_ICONS: Record<string, "heart" | "shield-checkmark" | "water" | "people" | "warning" | "leaf"> = {
-  Empathy: "heart",
-  Courage: "shield-checkmark",
-  Hygiene: "water",
-  Sharing: "people",
-  Safety: "warning",
-  Nature: "leaf",
-};
+const CHAR_COLORS: Record<string, string> = { Nino: NIMIZA.yellow, Miko: NIMIZA.blue, Zara: NIMIZA.purple };
+const CHAR_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = { Nino: "search", Miko: "heart", Zara: "flash" };
 
-interface Story {
+const FILTERS = ["All", "Empathy", "Courage", "Sharing", "Hygiene", "Safety", "Nature"];
+
+interface StoryItem {
   id: string;
   title: string;
-  emoji: string;
   description: string;
   characterName: string;
-  characterEmoji: string;
   skill: string;
   ageGroup: string;
   duration: number;
-  badgeEmoji: string;
   badgeName: string;
 }
 
-function StoryCard({ story }: { story: Story }) {
-  const skillColor = SKILL_COLORS[story.skill] || NIMIZA_COLORS.primary;
-  const skillIcon = SKILL_ICONS[story.skill] || "star";
+function StoryCard({ story }: { story: StoryItem }) {
+  const skill = SKILL_META[story.skill] ?? SKILL_META.default;
+  const charColor = CHAR_COLORS[story.characterName] || NIMIZA.purple;
+  const charIcon = CHAR_ICONS[story.characterName] || "star";
+  const scale = React.useRef(new Animated.Value(1)).current;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
+    <Pressable
+      onPressIn={() => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start()}
+      onPressOut={() => Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true }).start()}
       onPress={() => router.push({ pathname: "/story/[id]", params: { id: story.id } })}
-      activeOpacity={0.85}
     >
-      <View style={[styles.cardEmojiBg, { backgroundColor: skillColor + "22" }]}>
-        <Ionicons name={skillIcon} size={36} color={skillColor} />
-      </View>
-      <View style={styles.cardBody}>
-        <View style={styles.cardTop}>
-          <View style={[styles.skillChip, { backgroundColor: skillColor + "22" }]}>
-            <Text style={[styles.skillText, { color: skillColor }]}>{story.skill}</Text>
-          </View>
-          <View style={styles.durationRow}>
-            <Ionicons name="time-outline" size={11} color={NIMIZA_COLORS.textMuted} />
-            <Text style={styles.duration}>{story.duration} min</Text>
+      <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
+        <View style={[styles.cardThumb, { backgroundColor: skill.bg }]}>
+          <Ionicons name={skill.icon} size={44} color={skill.color} />
+          <View style={[styles.charBadge, { backgroundColor: charColor }]}>
+            <Ionicons name={charIcon} size={12} color="#FFF" />
+            <Text style={styles.charBadgeText}>{story.characterName}</Text>
           </View>
         </View>
-        <Text style={styles.cardTitle} numberOfLines={2}>{story.title}</Text>
-        <Text style={styles.cardDesc} numberOfLines={2}>{story.description}</Text>
-        <View style={styles.cardFooter}>
-          <Text style={styles.character}>
-            {story.characterName || "Unknown"}
-          </Text>
-          <View style={styles.ageBadge}>
-            <Text style={styles.ageText}>Ages {story.ageGroup}</Text>
+
+        <View style={styles.cardContent}>
+          <View style={styles.cardTopRow}>
+            <View style={[styles.skillPill, { backgroundColor: skill.bg }]}>
+              <Text style={[styles.skillPillText, { color: skill.color }]}>{story.skill}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Ionicons name="time-outline" size={11} color={NIMIZA.textMuted} />
+              <Text style={styles.metaText}>{story.duration} min</Text>
+              <View style={styles.dot} />
+              <Text style={styles.metaText}>Ages {story.ageGroup}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.cardTitle} numberOfLines={2}>{story.title}</Text>
+          <Text style={styles.cardDesc} numberOfLines={2}>{story.description}</Text>
+
+          <View style={styles.cardFooter}>
+            <View style={[styles.badgePill, { backgroundColor: NIMIZA.yellow + "33" }]}>
+              <Ionicons name="ribbon-outline" size={12} color={NIMIZA.yellowDark} />
+              <Text style={[styles.badgeText, { color: NIMIZA.yellowDark }]}>{story.badgeName}</Text>
+            </View>
+            <View style={[styles.playBtn, { backgroundColor: skill.color }]}>
+              <Ionicons name="play" size={14} color="#FFF" />
+            </View>
           </View>
         </View>
-      </View>
-      <View style={styles.cardArrow}>
-        <Ionicons name="chevron-forward" size={16} color={NIMIZA_COLORS.textMuted} />
-      </View>
-    </TouchableOpacity>
+      </Animated.View>
+    </Pressable>
   );
 }
 
 export default function AdventuresScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const [selectedSkill, setSelectedSkill] = useState("All");
+  const [filter, setFilter] = useState("All");
+  const { data: stories, isLoading } = useListStories();
 
-  const { data: allStories, isLoading } = useListStories();
-  const stories = (allStories ?? []).filter(s =>
-    selectedSkill === "All" || s.skill === selectedSkill
-  );
+  const filtered = (stories ?? []).filter(s => filter === "All" || s.skill === filter);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.root}>
       <LinearGradient
-        colors={[NIMIZA_COLORS.secondary, "#319795"]}
-        style={[styles.header, { paddingTop: topPad + 12 }]}
+        colors={[NIMIZA.blueSoft, NIMIZA.purpleSoft, NIMIZA.bg]}
+        style={[styles.header, { paddingTop: topPad + 16 }]}
       >
-        <Text style={styles.headerTitle}>Adventures</Text>
-        <Text style={styles.headerSub}>Pick a story to begin your journey</Text>
+        <View style={styles.headerLabelWrap}>
+          <Text style={styles.headerLabel}>STORYBOOKS</Text>
+        </View>
+        <Text style={styles.headerTitle}>
+          Pick an <Text style={styles.headerTitleBlue}>Adventure</Text>
+        </Text>
+        <Text style={styles.headerSub}>{stories?.length ?? 0} stories ready to explore</Text>
       </LinearGradient>
 
+      {/* Filter chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterRow}
       >
-        {SKILLS.map(skill => (
-          <TouchableOpacity
-            key={skill}
-            style={[styles.filterChip, selectedSkill === skill && styles.filterChipActive]}
-            onPress={() => setSelectedSkill(skill)}
-          >
-            <Text style={[styles.filterText, selectedSkill === skill && styles.filterTextActive]}>
-              {skill}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {FILTERS.map(f => {
+          const active = f === filter;
+          return (
+            <Pressable
+              key={f}
+              style={[styles.filterChip, active && styles.filterChipActive]}
+              onPress={() => setFilter(f)}
+            >
+              <Text style={[styles.filterText, active && styles.filterTextActive]}>{f}</Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {isLoading ? (
         <View style={styles.loadingBox}>
-          <Ionicons name="book-outline" size={36} color={NIMIZA_COLORS.textMuted} />
+          <Ionicons name="book-outline" size={48} color={NIMIZA.purple} />
           <Text style={styles.loadingText}>Loading adventures...</Text>
         </View>
       ) : (
         <FlatList
-          data={stories}
+          data={filtered}
           keyExtractor={item => item.id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 + insets.bottom }}
-          scrollEnabled={!!(stories.length > 0)}
+          contentContainerStyle={{ padding: 20, paddingBottom: 100 + insets.bottom, gap: 16 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <StoryCard story={item} />}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Ionicons name="book-outline" size={48} color={NIMIZA_COLORS.textMuted} />
-              <Text style={styles.emptyText}>No adventures found for this skill.</Text>
-              <TouchableOpacity onPress={() => setSelectedSkill("All")} style={styles.resetBtn}>
+              <Ionicons name="book-outline" size={56} color={NIMIZA.textMuted} />
+              <Text style={styles.emptyTitle}>No stories for this skill</Text>
+              <Pressable style={styles.resetBtn} onPress={() => setFilter("All")}>
                 <Text style={styles.resetText}>Show all adventures</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           }
         />
@@ -158,167 +165,72 @@ export default function AdventuresScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: NIMIZA_COLORS.background,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontFamily: "Inter_700Bold",
-    color: "#FFFFFF",
-    marginBottom: 4,
-  },
-  headerSub: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.8)",
-  },
-  filterRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  filterChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: NIMIZA_COLORS.surface,
-    borderWidth: 1.5,
-    borderColor: NIMIZA_COLORS.tabBarBorder,
-  },
-  filterChipActive: {
-    backgroundColor: NIMIZA_COLORS.primary,
-    borderColor: NIMIZA_COLORS.primary,
-  },
-  filterText: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    color: NIMIZA_COLORS.textSecondary,
-  },
-  filterTextActive: {
-    color: "#FFFFFF",
-  },
-  loadingBox: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: NIMIZA_COLORS.textSecondary,
-    fontFamily: "Inter_400Regular",
-  },
+  root: { flex: 1, backgroundColor: NIMIZA.bg },
+
+  header: { paddingHorizontal: 24, paddingBottom: 24 },
+  headerLabelWrap: { alignSelf: "flex-start", backgroundColor: NIMIZA.blue + "33", borderRadius: 50, paddingVertical: 5, paddingHorizontal: 16, marginBottom: 12 },
+  headerLabel: { fontFamily: "Nunito_800ExtraBold", fontSize: 11, color: NIMIZA.blueDark, letterSpacing: 1 },
+  headerTitle: { fontFamily: "FredokaOne_400Regular", fontSize: 30, color: NIMIZA.text },
+  headerTitleBlue: { color: NIMIZA.blue },
+  headerSub: { fontFamily: "Nunito_600SemiBold", fontSize: 13, color: NIMIZA.textLight, marginTop: 6 },
+
+  filterRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 8 },
+  filterChip: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 50, backgroundColor: NIMIZA.white, borderWidth: 2, borderColor: "#E8E4F0" },
+  filterChipActive: { backgroundColor: NIMIZA.purple, borderColor: NIMIZA.purple },
+  filterText: { fontFamily: "Nunito_800ExtraBold", fontSize: 13, color: NIMIZA.textLight },
+  filterTextActive: { color: "#FFF" },
+
+  loadingBox: { flex: 1, alignItems: "center", justifyContent: "center", gap: 14 },
+  loadingText: { fontFamily: "Nunito_700Bold", fontSize: 16, color: NIMIZA.textLight },
+
   card: {
-    backgroundColor: NIMIZA_COLORS.surface,
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: NIMIZA.white,
+    borderRadius: 28,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    flexDirection: "row",
+    shadowColor: NIMIZA.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 18,
+    elevation: 5,
   },
-  cardEmojiBg: {
-    width: 90,
+  cardThumb: {
+    width: 110,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "stretch",
+    position: "relative",
+    paddingTop: 8,
   },
-  cardBody: {
-    flex: 1,
-    padding: 14,
-  },
-  cardTop: {
+  charBadge: {
+    position: "absolute",
+    bottom: 10,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  skillChip: {
-    paddingVertical: 3,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-  },
-  skillText: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-  },
-  durationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  duration: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: NIMIZA_COLORS.textMuted,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-    color: NIMIZA_COLORS.text,
-    marginBottom: 4,
-    lineHeight: 19,
-  },
-  cardDesc: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: NIMIZA_COLORS.textSecondary,
-    marginBottom: 8,
-    lineHeight: 16,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  character: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-    color: NIMIZA_COLORS.textSecondary,
-  },
-  ageBadge: {
-    backgroundColor: NIMIZA_COLORS.surfaceAlt,
-    borderRadius: 8,
+    gap: 4,
+    borderRadius: 50,
     paddingVertical: 3,
     paddingHorizontal: 8,
   },
-  ageText: {
-    fontSize: 10,
-    fontFamily: "Inter_500Medium",
-    color: NIMIZA_COLORS.textMuted,
-  },
-  cardArrow: {
-    paddingRight: 12,
-  },
-  emptyBox: {
-    alignItems: "center",
-    marginTop: 60,
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: NIMIZA_COLORS.textSecondary,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-  },
-  resetBtn: {
-    backgroundColor: NIMIZA_COLORS.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    marginTop: 4,
-  },
-  resetText: {
-    color: "#FFF",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 14,
-  },
+  charBadgeText: { fontFamily: "Nunito_800ExtraBold", fontSize: 9, color: "#FFF" },
+
+  cardContent: { flex: 1, padding: 14 },
+  cardTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  skillPill: { borderRadius: 50, paddingVertical: 3, paddingHorizontal: 10 },
+  skillPillText: { fontFamily: "Nunito_800ExtraBold", fontSize: 10 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  metaText: { fontFamily: "Nunito_600SemiBold", fontSize: 10, color: NIMIZA.textMuted },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: NIMIZA.textMuted },
+
+  cardTitle: { fontFamily: "FredokaOne_400Regular", fontSize: 16, color: NIMIZA.text, marginBottom: 5, lineHeight: 21 },
+  cardDesc: { fontFamily: "Nunito_600SemiBold", fontSize: 12, color: NIMIZA.textLight, lineHeight: 17, marginBottom: 10 },
+
+  cardFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  badgePill: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 50, paddingVertical: 4, paddingHorizontal: 10 },
+  badgeText: { fontFamily: "Nunito_700Bold", fontSize: 10 },
+  playBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+
+  emptyBox: { alignItems: "center", marginTop: 60, gap: 12 },
+  emptyTitle: { fontFamily: "FredokaOne_400Regular", fontSize: 20, color: NIMIZA.textLight },
+  resetBtn: { backgroundColor: NIMIZA.purple, borderRadius: 50, paddingVertical: 10, paddingHorizontal: 24, marginTop: 4 },
+  resetText: { fontFamily: "Nunito_800ExtraBold", fontSize: 14, color: "#FFF" },
 });

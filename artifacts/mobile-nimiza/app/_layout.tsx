@@ -1,10 +1,15 @@
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts,
-} from "@expo-google-fonts/inter";
+  Nunito_400Regular,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+  useFonts as useNunito,
+} from "@expo-google-fonts/nunito";
+import {
+  FredokaOne_400Regular,
+  useFonts as useFredoka,
+} from "@expo-google-fonts/fredoka-one";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -12,10 +17,8 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
@@ -30,20 +33,23 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+  const [nunitoLoaded, nunitoError] = useNunito({
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
   });
+  const [fredokaLoaded, fredokaError] = useFredoka({ FredokaOne_400Regular });
+
+  const loaded = nunitoLoaded && fredokaLoaded;
+  const error = nunitoError || fredokaError;
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+    if (loaded || error) SplashScreen.hideAsync();
+  }, [loaded, error]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!loaded && !error) return null;
 
   return (
     <SafeAreaProvider>

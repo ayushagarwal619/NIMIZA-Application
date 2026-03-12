@@ -1,26 +1,33 @@
-const NIMIZA_COLORS = {
-  primary: "#FF6B35",
-  secondary: "#4ECDC4",
-  accent: "#FFE66D",
-  purple: "#A78BFA",
-  pink: "#F472B6",
-  blue: "#60A5FA",
-  green: "#34D399",
+const NIMIZA = {
+  yellow:       "#FFD74B",
+  yellowSoft:   "#FFF3C0",
+  yellowDark:   "#D4900A",
+  blue:         "#5BB8FF",
+  blueSoft:     "#D6EEFF",
+  blueDark:     "#2276C4",
+  purple:       "#B97FFF",
+  purpleSoft:   "#EEE0FF",
+  purpleDark:   "#7B3FCC",
+  green:        "#5DDBA0",
+  coral:        "#FF7F7F",
 
-  background: "#FFF8F0",
-  surface: "#FFFFFF",
-  surfaceAlt: "#FFF1E6",
+  bg:           "#FFFDF6",
+  text:         "#2D2A4A",
+  textLight:    "#6B6880",
+  textMuted:    "#9B97B2",
+  white:        "#FFFFFF",
+  surface:      "#FFFFFF",
+  surfaceAlt:   "#F6F0FF",
 
-  text: "#1A1A2E",
-  textSecondary: "#6B7280",
-  textMuted: "#9CA3AF",
+  nino:         "#FFD74B",
+  ninoGrad:     ["#FFD74B", "#FFC107"] as [string, string],
+  miko:         "#5BB8FF",
+  mikoGrad:     ["#5BB8FF", "#3A9FE8"] as [string, string],
+  zara:         "#B97FFF",
+  zaraGrad:     ["#B97FFF", "#8A4FE8"] as [string, string],
 
-  nino: "#60A5FA",
-  miko: "#F472B6",
-  zara: "#FFE66D",
-
-  tabBar: "#FFFFFF",
-  tabBarBorder: "#F3E8D8",
+  shadow:       "rgba(45,42,74,0.10)",
+  shadowLg:     "rgba(45,42,74,0.15)",
 };
 
-export default NIMIZA_COLORS;
+export default NIMIZA;

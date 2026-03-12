@@ -1,0 +1,314 @@
+You are a senior full-stack developer.
+
+I already have a working HTML website for a kids edutainment platform called **NiMiZa**.
+
+Your task is to convert this website into a **full web application and mobile-ready platform**.
+
+Use the existing UI design, theme, colors, and structure from the current HTML file and build a scalable application around it.
+
+The platform is designed for **children aged 3–8** and teaches **life skills and general awareness through stories, games, and animated content.**
+
+Main tagline:
+**Learning Life Skills Through Fun Adventures**
+
+---
+
+# 1 FRONTEND REQUIREMENTS
+
+Use **React (Next.js preferred)**.
+
+Keep the same visual theme as the existing website:
+
+Fonts
+Nunito + Fredoka
+
+Colors
+Yellow, Blue, Purple playful gradients.
+
+Create reusable components.
+
+Pages should include:
+
+Home
+Characters
+For Kids
+Stories
+Games
+Parents
+Contact
+
+Use modern UI libraries like:
+
+TailwindCSS or ShadCN UI.
+
+Add smooth animations using:
+
+Framer Motion.
+
+---
+
+# 2 CORE FEATURES
+
+## Character Interaction
+
+Characters:
+
+Nino – Curious Explorer
+Miko – Kind Friend
+Zara – Brave Problem Solver
+
+Features:
+
+Hover interaction
+Voice greeting
+Speech bubbles
+Animated reactions
+
+Use Web Speech API for voice.
+
+Voice types:
+
+Nino – playful boy voice
+Miko – soft boy voice
+Zara – calm female voice
+
+---
+
+## For Kids Section
+
+This should be the main interactive area.
+
+Cards:
+
+Animated Series
+Storybooks
+Learning Games
+EQ Learning Kits
+
+Features:
+
+Large animated cards
+Hover animations
+Floating icons
+Buttons:
+
+Watch Now
+Read Story
+Play Game
+
+---
+
+# 3 STORY SYSTEM
+
+Create a **Story Engine**.
+
+Each story contains:
+
+Title
+Description
+Characters
+Lesson
+Audio narration
+
+Stories should appear as:
+
+Story cards.
+
+Clicking a story opens a **story reader page**.
+
+Features:
+
+Read aloud narration
+Page navigation
+Animations.
+
+---
+
+# 4 MINI GAMES SYSTEM
+
+Create a simple **Kids Game Hub**.
+
+Example games:
+
+Emotion Match
+Balloon Pop
+Memory Cards
+Help the Character Game.
+
+Games should track:
+
+Score
+Completion
+Rewards.
+
+---
+
+# 5 USER SYSTEM
+
+Create a **Parent Account System**.
+
+Parents can:
+
+Create account
+Add child profile
+Track learning progress.
+
+Authentication:
+
+Use JWT or NextAuth.
+
+---
+
+# 6 DASHBOARD
+
+Parent dashboard includes:
+
+Child profiles
+Stories watched
+Games completed
+Skills learned.
+
+---
+
+# 7 DATABASE DESIGN
+
+Use **PostgreSQL** or **MongoDB**.
+
+Suggested schema:
+
+Users
+id
+email
+password
+role
+
+Children
+id
+name
+age
+parent_id
+
+Stories
+id
+title
+description
+lesson
+content
+
+Games
+id
+name
+type
+difficulty
+
+Progress
+child_id
+story_id
+game_id
+completion
+
+Messages
+name
+email
+message
+
+---
+
+# 8 BACKEND
+
+Use **Node.js with Express** or **Next.js API routes**.
+
+Create APIs for:
+
+Authentication
+Stories
+Games
+Progress tracking
+Contact messages.
+
+---
+
+# 9 CONTACT SYSTEM
+
+Create a **Get in Touch page**.
+
+Fields:
+
+Name
+Email
+Message.
+
+Store messages in database.
+
+Send email notification using:
+
+Nodemailer.
+
+---
+
+# 10 ADMIN PANEL
+
+Create a simple admin panel.
+
+Admin can:
+
+Add stories
+Upload episodes
+Add games
+View contact messages.
+
+---
+
+# 11 ANIMATION SYSTEM
+
+Add playful animations:
+
+Floating stars
+Sparkles
+Moving clouds
+Soft gradients.
+
+Use Framer Motion for interactions.
+
+---
+
+# 12 RESPONSIVE DESIGN
+
+App should work on:
+
+Desktop
+Tablet
+Mobile.
+
+Prepare UI so it can easily be converted to a **React Native mobile app later**.
+
+---
+
+# 13 DEPLOYMENT
+
+Prepare the project for deployment using:
+
+Frontend
+Vercel
+
+Backend
+Node server or Vercel functions
+
+Database
+Supabase or MongoDB Atlas.
+
+---
+
+# FINAL OUTPUT
+
+Generate the full project structure:
+
+Frontend folder
+Backend folder
+Database schema
+API routes
+Authentication system
+Game system
+Story system.
+
+Make the code clean and scalable so that new stories and games can easily be added later.

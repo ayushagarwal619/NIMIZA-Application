@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import NIMIZA_COLORS from "@/constants/nimiza-colors";
+import NIMIZA from "@/constants/nimiza-colors";
 
 function NativeTabLayout() {
   return (
@@ -18,7 +18,7 @@ function NativeTabLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="characters">
         <Icon sf={{ default: "person.3", selected: "person.3.fill" }} />
-        <Label>Characters</Label>
+        <Label>Friends</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="adventures">
         <Icon sf={{ default: "book", selected: "book.fill" }} />
@@ -41,23 +41,27 @@ function ClassicTabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: NIMIZA_COLORS.primary,
-        tabBarInactiveTintColor: NIMIZA_COLORS.textMuted,
+        tabBarActiveTintColor: NIMIZA.purple,
+        tabBarInactiveTintColor: NIMIZA.textMuted,
+        tabBarLabelStyle: {
+          fontFamily: "Nunito_800ExtraBold",
+          fontSize: 11,
+        },
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : NIMIZA_COLORS.surface,
-          borderTopWidth: 1,
-          borderTopColor: NIMIZA_COLORS.tabBarBorder,
+          backgroundColor: isIOS ? "transparent" : NIMIZA.white,
+          borderTopWidth: 2,
+          borderTopColor: NIMIZA.purpleSoft,
           elevation: 0,
           paddingBottom: insets.bottom,
-          ...(isWeb ? { height: 84 } : {}),
+          height: 60 + insets.bottom,
         },
         tabBarBackground: () =>
           isIOS ? (
             <BlurView intensity={95} tint="light" style={StyleSheet.absoluteFill} />
-          ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: NIMIZA_COLORS.surface }]} />
-          ) : null,
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: NIMIZA.white }]} />
+          ),
       }}
     >
       <Tabs.Screen
@@ -75,7 +79,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="characters"
         options={{
-          title: "Characters",
+          title: "Friends",
           tabBarIcon: ({ color, size }) =>
             isIOS ? (
               <SymbolView name="person.3.fill" tintColor={color} size={size} />
@@ -113,8 +117,6 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
+  if (isLiquidGlassAvailable()) return <NativeTabLayout />;
   return <ClassicTabLayout />;
 }
